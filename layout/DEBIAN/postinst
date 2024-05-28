@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -f "/var/jb/.installed_dopamine" ]; then
+if [ -f "/var/jb/.procursus_strapped" ]; then
     chmod 777 /var/jb/Library/A-Font
 else 
     chmod 777 /Library/A-Font

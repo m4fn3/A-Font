@@ -1,6 +1,7 @@
 #include <UIKit/UIKit.h>
 #import <CoreText/CoreText.h>
 #import <HBLog.h>
+#import <libroot.h>
 #import "headers.h"
 
 static NSString *fontname;
@@ -435,12 +436,9 @@ NSArray *getFullFontList() {
 	if([identifier isEqualToString:@"com.apple.photos.VideoConversionService"] || [identifier isEqualToString:@"com.apple.springboard.SBRendererService"] || [identifier isEqualToString:@"com.apple.Search.Framework"]) return;
 
 	NSFileManager *manager = [NSFileManager defaultManager];
-	BOOL isDopamine = [manager fileExistsAtPath:@"/var/jb/.installed_dopamine"];
-	if([manager fileExistsAtPath:@"/var/Liy/"]) AFontPath = @"/var/Liy/Library/A-Font/";
-	else if(isDopamine) AFontPath = @"/var/jb/Library/A-Font/";
-	else AFontPath = @"/Library/A-Font/";
+	AFontPath = JBROOT_PATH_NSSTRING(@"/Library/A-Font/");
 
-	NSMutableDictionary *plistDict = [[NSMutableDictionary alloc] initWithContentsOfFile:isDopamine ? @"/var/jb/var/mobile/Library/Preferences/com.rpgfarm.afontprefs.plist" : @"/var/mobile/Library/Preferences/com.rpgfarm.afontprefs.plist"];
+	NSMutableDictionary *plistDict = [[NSMutableDictionary alloc] initWithContentsOfFile:JBROOT_PATH_NSSTRING(@"/var/mobile/Library/Preferences/com.rpgfarm.afontprefs.plist")];
 	NSMutableDictionary *fontMatchTempDict = [NSMutableDictionary new];
 	if([plistDict[@"blacklist"][identifier] isEqual:@1]) return;
 

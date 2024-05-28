@@ -1,11 +1,5 @@
-ifeq ($(THEOS_PACKAGE_SCHEME),rootless)
-TARGET = iphone:14.5:14.5
+TARGET = iphone:15.6:15.6
 PREFIX="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/"
-else
-TARGET = iphone:12.2:12.2
-PREFIX="/Library/Developer/TheosToolchains/Xcode11.xctoolchain/usr/bin/"
-endif
-
 ARCHS = arm64 arm64e
 
 include $(THEOS)/makefiles/common.mk

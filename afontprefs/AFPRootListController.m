@@ -2,11 +2,14 @@
 #include "AFPBlackListController.h"
 #import <spawn.h>
 #import <objc/runtime.h>
+#import <libroot.h>
+#import <SpringBoardServices/SBSRestartRenderServerAction.h>
+#import <FrontBoardServices/FBSSystemService.h>
+
 NSString *PREFERENCE_IDENTIFIER;
 NSFileManager *manager;
 NSMutableDictionary *prefs;
 NSString *AFontPath;
-BOOL isDopamine;
 NSBundle *localizedBundle;
 
 @interface UIApplication (Private)
@@ -242,19 +245,23 @@ BOOL clearDir(NSString *dir) {
 }
 -(void)getPreference {
 	manager = [NSFileManager defaultManager];
-	isDopamine = [manager fileExistsAtPath:@"/var/jb/.installed_dopamine"];
-	localizedBundle = [NSBundle bundleWithPath:isDopamine ? @"/var/jb/Library/PreferenceBundles/AFontPrefs.bundle" : @"/Library/PreferenceBundles/AFontPrefs.bundle"];
-	if([manager fileExistsAtPath:@"/var/Liy/"]) AFontPath = @"/var/Liy/Library/A-Font/";
-	else if([manager fileExistsAtPath:@"/var/jb/.installed_dopamine"]) AFontPath = @"/var/jb/Library/A-Font/";
-	else AFontPath = @"/Library/A-Font/";
-	PREFERENCE_IDENTIFIER = isDopamine ? @"/var/jb/var/mobile/Library/Preferences/com.rpgfarm.afontprefs.plist" : @"/var/mobile/Library/Preferences/com.rpgfarm.afontprefs.plist";
+	localizedBundle = [NSBundle bundleWithPath:JBROOT_PATH_NSSTRING(@"/Library/PreferenceBundles/AFontPrefs.bundle")];
+	AFontPath = JBROOT_PATH_NSSTRING(@"/Library/A-Font/");
+	PREFERENCE_IDENTIFIER = [JBROOT_PATH_NSSTRING(@"/var/mobile/Library/Preferences/com.rpgfarm.afontprefs.plist") copy];
 	if(![manager fileExistsAtPath:PREFERENCE_IDENTIFIER]) prefs = [[NSMutableDictionary alloc] init];
 	else prefs = [[NSMutableDictionary alloc] initWithContentsOfFile:PREFERENCE_IDENTIFIER];
 }
 - (void)Respring {
-	pid_t pid;
-	const char* args[] = {"killall", "backboardd", NULL};
-	posix_spawn(&pid, "/usr/bin/killall", NULL, NULL, (char* const*)args, NULL);
+	// Copied from Cephei (https://github.com/hbang/libcephei/blob/7ad69a903cffa0b8240f8eb1a9afb27c15d8fe57/main/HBRespringController.m)
+	[[NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/FrontBoardServices.framework"] load];
+	[[NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/SpringBoardServices.framework"] load];
+
+	Class $FBSSystemService = NSClassFromString(@"FBSSystemService");
+	Class $SBSRelaunchAction = NSClassFromString(@"SBSRelaunchAction");
+	if ($FBSSystemService && $SBSRelaunchAction) {
+		SBSRelaunchAction *restartAction = [$SBSRelaunchAction actionWithReason:@"RestartRenderServer" options:SBSRelaunchActionOptionsFadeToBlackTransition targetURL:[NSURL URLWithString:@"prefs:root=A-Font"]];
+		[[$FBSSystemService sharedService] sendActions:[NSSet setWithObject:restartAction] withResult:nil];
+	}
 }
 - (void)cacheRespring {
 	NSString *phoneDir = findAppDocumentPath(@"com.apple.mobilephone");
@@ -284,9 +291,7 @@ BOOL clearDir(NSString *dir) {
 	}]];
 	[alert addAction:[UIAlertAction actionWithTitle:LocalizeString(@"Clear cache") style:UIAlertActionStyleDestructive handler:^(UIAlertAction * action) {
 		for(NSString* key in dir) clearDir(key);
-		pid_t pid;
-		const char* args[] = {"killall", "backboardd", NULL};
-		posix_spawn(&pid, "/usr/bin/killall", NULL, NULL, (char* const*)args, NULL);
+		[self Respring];
 	}]];
 	[self presentViewController:alert animated:YES completion:nil];
 }
