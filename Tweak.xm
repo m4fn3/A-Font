@@ -90,6 +90,72 @@ static UIFont *defaultFont;
 @property (nonatomic) BOOL isAFontApplied;
 @end
 
+// --- CoreText system-UI font interception -----------------------------------
+//
+// SwiftUI and the iOS 26 "Liquid Glass" chrome never call +[UIFont systemFontOfSize:]
+// and friends. They ask CoreText directly for the system face:
+//
+//   CTFontCreateWithFontDescriptor(desc(.AppleSystemUIFaceBody), 0, NULL) -> .SFUI-Regular
+//
+// so every hook above misses them. That is why Settings' root cells, the Photos
+// toolbar and Clock's "When Timer Ends" keep the stock face. Catching the
+// descriptor here covers those without touching any real named font.
+//
+// Two name shapes reach CoreText and both are the system UI family:
+//
+//   .AppleSystemUIFaceBody, .AppleSystemUIFontBold, ...  abstract face request
+//   .SFUI-Regular, .SFUI-Semibold, .SFUI-BoldG3, ...     already-resolved face
+//
+// Some callers (Apple News, for one) build the descriptor from the resolved name,
+// so matching only the abstract form leaves them on the stock face. Everything
+// outside these two prefixes is left alone: the lock-screen clock faces
+// (.SFSoftNumeric, .SFRoundedNumeric, .NewYorkSoftNumeric, ...), SF Symbols and
+// any font an app ships itself.
+
+static BOOL isSystemUIFaceName(NSString *name) {
+	if(name == nil) return false;
+	return [name hasPrefix:@".AppleSystemUIF"] || [name hasPrefix:@".SFUI"];
+}
+
+static BOOL isBoldResolvedName(NSString *name) {
+	if(name == nil) return false;
+	NSString *upper = [name uppercaseString];
+	return [upper containsString:@"BOLD"]
+		|| [upper containsString:@"SEMIBOLD"]
+		|| [upper containsString:@"HEAVY"]
+		|| [upper containsString:@"BLACK"];
+}
+
+// Descriptors reach us either with an explicit name or with only the private
+// NSCTFontUIUsageAttribute set, depending on how the caller built them.
+static BOOL descriptorIsSystemUI(CTFontDescriptorRef descriptor) {
+	if(descriptor == NULL) return false;
+	NSString *name = (NSString *)CFBridgingRelease(CTFontDescriptorCopyAttribute(descriptor, kCTFontNameAttribute));
+	if(name != nil) return isSystemUIFaceName(name);
+	NSString *usage = (NSString *)CFBridgingRelease(CTFontDescriptorCopyAttribute(descriptor, CFSTR("NSCTFontUIUsageAttribute")));
+	return isSystemUIFaceName(usage) || [usage hasPrefix:@"CTFontRegularUsage"] || [usage hasPrefix:@"UICTFontTextStyle"];
+}
+
+// Takes ownership of `original` (CoreText create rule) and returns a +1 font.
+static CTFontRef replaceSystemFont(CTFontRef original, CGFloat requestedSize, const CGAffineTransform *matrix) {
+	if(original == NULL) return NULL;
+
+	NSString *resolved = (NSString *)CFBridgingRelease(CTFontCopyPostScriptName(original));
+	NSString *replacement = (isBoldResolvedName(resolved) && boldfontname) ? boldfontname : fontname;
+	if(replacement == nil) return original;
+
+	CGFloat pointSize = CTFontGetSize(original);
+	if(pointSize <= 0) pointSize = requestedSize;
+	// The size multiplier is skipped in SpringBoard for the same reason the UIFont
+	// hooks skip it: scaled labels break the home screen layout.
+	if(!(isSpringBoard && ![size isEqual:@1])) pointSize = getSize(pointSize);
+
+	CTFontRef result = CTFontCreateWithName((__bridge CFStringRef)replacement, pointSize, matrix);
+	if(result == NULL) return original;
+	CFRelease(original);
+	return result;
+}
+
 %group UILabel
 %hook UILabel
 // // %property BOOL isAFontApplied;
@@ -271,6 +337,28 @@ static UIFont *defaultFont;
   return %orig(fontname, arg2);
 }
 %end
+
+// SwiftUI / Liquid Glass path — see the notes above replaceSystemFont().
+%hookf(CTFontRef, CTFontCreateWithFontDescriptor, CTFontDescriptorRef descriptor, CGFloat pointSize, const CGAffineTransform *matrix) {
+	CTFontRef original = %orig;
+	if(!descriptorIsSystemUI(descriptor)) return original;
+	return replaceSystemFont(original, pointSize, matrix);
+}
+%hookf(CTFontRef, CTFontCreateWithFontDescriptorAndOptions, CTFontDescriptorRef descriptor, CGFloat pointSize, const CGAffineTransform *matrix, CTFontOptions options) {
+	CTFontRef original = %orig;
+	if(!descriptorIsSystemUI(descriptor)) return original;
+	return replaceSystemFont(original, pointSize, matrix);
+}
+%hookf(CTFontRef, CTFontCreateWithName, CFStringRef name, CGFloat pointSize, const CGAffineTransform *matrix) {
+	CTFontRef original = %orig;
+	if(!isSystemUIFaceName((__bridge NSString *)name)) return original;
+	return replaceSystemFont(original, pointSize, matrix);
+}
+%hookf(CTFontRef, CTFontCreateWithNameAndOptions, CFStringRef name, CGFloat pointSize, const CGAffineTransform *matrix, CTFontOptions options) {
+	CTFontRef original = %orig;
+	if(!isSystemUIFaceName((__bridge NSString *)name)) return original;
+	return replaceSystemFont(original, pointSize, matrix);
+}
 %end
 
 @interface _UIStatusBarStringView : UILabel

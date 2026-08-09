@@ -1,7 +1,7 @@
 Package: com.rpgfarm.a-font
 Name: A-Font
 Depends: mobilesubstrate, preferenceloader
-Version: 1.10.1
+Version: 2.0.0
 Architecture: iphoneos-arm
 Description: Change your font!
 Maintainer: Baw Appie <pp121324@gmail.com>
