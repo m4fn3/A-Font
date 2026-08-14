@@ -1,7 +1,7 @@
 #include <UIKit/UIKit.h>
 #import <CoreText/CoreText.h>
 #import <HBLog.h>
-#import <libroot.h>
+#import <roothide.h>
 #import "headers.h"
 
 static NSString *fontname;
@@ -524,9 +524,9 @@ NSArray *getFullFontList() {
 	if([identifier isEqualToString:@"com.apple.photos.VideoConversionService"] || [identifier isEqualToString:@"com.apple.springboard.SBRendererService"] || [identifier isEqualToString:@"com.apple.Search.Framework"]) return;
 
 	NSFileManager *manager = [NSFileManager defaultManager];
-	AFontPath = JBROOT_PATH_NSSTRING(@"/Library/A-Font/");
+	AFontPath = jbroot(@"/Library/A-Font/");
 
-	NSMutableDictionary *plistDict = [[NSMutableDictionary alloc] initWithContentsOfFile:JBROOT_PATH_NSSTRING(@"/var/mobile/Library/Preferences/com.rpgfarm.afontprefs.plist")];
+	NSMutableDictionary *plistDict = [[NSMutableDictionary alloc] initWithContentsOfFile:jbroot(@"/var/mobile/Library/Preferences/com.rpgfarm.afontprefs.plist")];
 	NSMutableDictionary *fontMatchTempDict = [NSMutableDictionary new];
 	if([plistDict[@"blacklist"][identifier] isEqual:@1]) return;
 

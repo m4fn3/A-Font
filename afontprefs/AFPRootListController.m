@@ -2,7 +2,7 @@
 #include "AFPBlackListController.h"
 #import <spawn.h>
 #import <objc/runtime.h>
-#import <libroot.h>
+#import <roothide.h>
 #import <SpringBoardServices/SBSRestartRenderServerAction.h>
 #import <FrontBoardServices/FBSSystemService.h>
 
@@ -245,9 +245,9 @@ BOOL clearDir(NSString *dir) {
 }
 -(void)getPreference {
 	manager = [NSFileManager defaultManager];
-	localizedBundle = [NSBundle bundleWithPath:JBROOT_PATH_NSSTRING(@"/Library/PreferenceBundles/AFontPrefs.bundle")];
-	AFontPath = JBROOT_PATH_NSSTRING(@"/Library/A-Font/");
-	PREFERENCE_IDENTIFIER = [JBROOT_PATH_NSSTRING(@"/var/mobile/Library/Preferences/com.rpgfarm.afontprefs.plist") copy];
+	localizedBundle = [NSBundle bundleWithPath:jbroot(@"/Library/PreferenceBundles/AFontPrefs.bundle")];
+	AFontPath = jbroot(@"/Library/A-Font/");
+	PREFERENCE_IDENTIFIER = [jbroot(@"/var/mobile/Library/Preferences/com.rpgfarm.afontprefs.plist") copy];
 	if(![manager fileExistsAtPath:PREFERENCE_IDENTIFIER]) prefs = [[NSMutableDictionary alloc] init];
 	else prefs = [[NSMutableDictionary alloc] initWithContentsOfFile:PREFERENCE_IDENTIFIER];
 }

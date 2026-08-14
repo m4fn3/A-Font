@@ -1,7 +1,8 @@
 #!/bin/bash
 
-if [ -f "/var/jb/.procursus_strapped" ]; then
-    chmod 777 /var/jb/Library/A-Font
-else 
-    chmod 777 /Library/A-Font
-fi
+# $0 is <prefix>/var/lib/dpkg/info/<package>.postinst, so the prefix is empty on
+# rootful, /var/jb on rootless and the jbroot path on roothide.
+PREFIX="${0%/var/lib/dpkg/info/*}"
+[ "$PREFIX" = "$0" ] && PREFIX=""
+
+chmod 777 "$PREFIX/Library/A-Font"

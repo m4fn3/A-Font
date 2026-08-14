@@ -1,4 +1,4 @@
-TARGET = iphone:15.6:15.6
+TARGET = iphone:clang:16.5:15.6
 PREFIX="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/"
 ARCHS = arm64 arm64e
 
@@ -6,6 +6,10 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = AFont
 AFont_FILES = Tweak.xm
+
+ifeq ($(THEOS_PACKAGE_SCHEME),roothide)
+AFont_LDFLAGS += -lroothide
+endif
 # AFont_PRIVATE_FRAMEWORKS = AppSupport
 
 # export STRCRY = 1

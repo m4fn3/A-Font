@@ -5,6 +5,10 @@ AFontPrefs_FILES = AFPRootListController.m AFPBlackListController.m
 AFontPrefs_INSTALL_PATH = /Library/PreferenceBundles
 AFontPrefs_FRAMEWORKS = UIKit
 AFontPrefs_PRIVATE_FRAMEWORKS = Preferences CoreServices
+
+ifeq ($(THEOS_PACKAGE_SCHEME),roothide)
+AFontPrefs_LDFLAGS += -lroothide
+endif
 # AFontPrefs_LIBRARIES = applist
 
 include $(THEOS_MAKE_PATH)/bundle.mk
