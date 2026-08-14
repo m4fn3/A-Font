@@ -22,3 +22,9 @@ include $(THEOS_MAKE_PATH)/tweak.mk
 # 	install.exec "killall -9 SpringBoard"
 SUBPROJECTS += afontprefs
 include $(THEOS_MAKE_PATH)/aggregate.mk
+
+# The font directory has to be writable by the downloader. Baking the mode into
+# the package beats a postinst, which has to guess the install prefix and got it
+# wrong under at least one scheme.
+internal-stage::
+	$(ECHO_NOTHING)find $(THEOS_STAGING_DIR) -type d -name A-Font -exec chmod 777 {} +$(ECHO_END)
