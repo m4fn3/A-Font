@@ -4,6 +4,6 @@ Depends: mobilesubstrate, preferenceloader
 Version: 2.0.0
 Architecture: iphoneos-arm
 Description: Change your font!
-Maintainer: Baw Appie <pp121324@gmail.com>
+Maintainer: m4fn3
 Author: Baw Appie <pp121324@gmail.com>
 Section: Tweaks
